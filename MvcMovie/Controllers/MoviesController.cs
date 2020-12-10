@@ -20,17 +20,47 @@ namespace MvcMovie.Controllers
     }
 
     // GET: Movies
-    public async Task<IActionResult> Index(string searchString)
+    public async Task<IActionResult> Index(string movieGenre, string searchString)
     {
-      var movies = from m in _context.Movie 
+      #region [搭配 Models.Movie]
+      //var movies = from m in _context.Movie 
+      //             select m;
+      //if(!String.IsNullOrEmpty(searchString))
+      //{
+      //  movies = movies.Where(s => s.Title.Contains(searchString));
+      //}
+
+      //return View(await movies.ToListAsync());
+      #endregion
+
+      #region [改用ViewModel]
+      // 撈出資料庫所有類型
+      IQueryable<string> genreQuery = from m in _context.Movie
+                                      orderby m.Genre
+                                      select m.Genre;
+      // 所有電影資料
+      var movies = from m in _context.Movie
                    select m;
-      if(!String.IsNullOrEmpty(searchString))
+
+      if (!string.IsNullOrEmpty(searchString))
       {
-        movies = movies.Where(s => s.Title.Contains(searchString));
+        movies = movies.Where(m => m.Title.Contains(searchString));
       }
 
-      //return View(await _context.Movie.ToListAsync());
-      return View(await movies.ToListAsync());
+      if (!string.IsNullOrEmpty(movieGenre))
+      {
+        movies = movies.Where(m => m.Genre == movieGenre);
+      }
+
+      var movieGenreVM = new MovieGenreViewModel
+      {
+        Genres = new SelectList(await genreQuery.Distinct().ToListAsync()),
+        Movies = await movies.ToListAsync()
+      };
+
+      return View(movieGenreVM);
+      #endregion
+
     }
 
     // GET: Movies/Details/5
